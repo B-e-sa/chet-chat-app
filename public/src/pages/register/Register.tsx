@@ -1,9 +1,12 @@
 import styled from 'styled-components'
 import axios from 'axios'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Field, Form, Formik } from 'formik'
-import eyeIcon from '../assets/icons/eyeIcon.svg'
+import { ToastContainer, toast } from 'react-toastify'
+import eyeIcon from '../../assets/icons/eyeIcon.svg'
 import registerRoute from '../../../utils/APIRoutes'
+import "react-toastify/dist/ReactToastify.css"
+import { useEffect, useState } from 'react'
 
 interface IErrors {
     username: string
@@ -17,6 +20,23 @@ interface IErrors {
 }
 
 const Register = () => {
+
+    const navigate = useNavigate()
+
+    const [isPasswordShowing, setIsPasswordShowing] = useState(false)
+
+    const handlePasswordShow = () => {
+        isPasswordShowing === false ?
+            setIsPasswordShowing(true)
+            :
+            setIsPasswordShowing(false)
+    }
+
+    useEffect(() => {
+        if (localStorage.getItem('chet-user')) {
+            navigate('/')
+        }
+    }, [])
 
     return (
         <>
@@ -34,15 +54,14 @@ const Register = () => {
                     }}
                     validate={values => {
                         const errors = {} as IErrors;
-
                         if (!values.username) {
-
+                            errors.username = "Username required"
                         } else if (values.username.length < 4 || values.username.length > 20) {
-                            errors.username = 'Password must have 4-20 characters'
+                            errors.username = 'Username must have 4-20 characters'
                         }
 
                         if (!values.email) {
-
+                            errors.password = "Password required"
                         } else if (
                             !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)
                         ) {
@@ -79,30 +98,40 @@ const Register = () => {
 
                         return errors;
                     }}
+
                     onSubmit={async (values, { setSubmitting }) => {
+                        try {
+                            const { username, email, password } = values
 
-                        const { username, email, password } = values
-
-                        console.log()
-
-                        const { data } =
-                            await axios.post(registerRoute, {
-                                username,
-                                email,
-                                password
-                            })
-                                .then(() => {
-
-                                    if (data?.status === false) {
-
-                                        
-
-                                    }
-
-                                    setSubmitting(false)
-
+                            const { data } =
+                                await axios.post(registerRoute, {
+                                    username,
+                                    email,
+                                    password
                                 })
-                                .catch(err => console.log(err))
+
+                            if (data?.status === false) {
+                                toast.error(data.msg, {
+                                    position: "bottom-right",
+                                    autoClose: 5000,
+                                    pauseOnHover: true,
+                                    draggable: false,
+                                    theme: "light"
+                                })
+                            } else {
+                                localStorage.setItem('chet-user', JSON.stringify(data.user))
+                                navigate('/')
+                            }
+                        } catch {
+                            toast.error("An error ocurred, try again later", {
+                                position: "bottom-right",
+                                autoClose: 5000,
+                                pauseOnHover: true,
+                                draggable: false,
+                                theme: "light"
+                            })
+                        }
+                        setSubmitting(false)
                     }}
                 >
                     {({
@@ -153,6 +182,7 @@ const Register = () => {
                                     onBlur={handleBlur}
                                     value={values.email}
                                 />
+
                                 {
                                     errors.email === undefined ?
                                         <></>
@@ -162,16 +192,30 @@ const Register = () => {
                                         </div>
                                 }
 
-                                <Field
-                                    required
-                                    placeholder='Password'
-                                    type='password'
-                                    name='password'
-                                    title='Please enter your password'
-                                    onChange={handleChange}
-                                    onBlur={handleBlur}
-                                    value={values.password}
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <Field
+                                        required
+                                        placeholder='Password'
+                                        type={isPasswordShowing ? 'text' : 'password'}
+                                        name='password'
+                                        title='Please enter your password'
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        value={values.password}
+                                    />
+                                    <img
+                                        src={eyeIcon}
+                                        alt="show password"
+                                        onClick={handlePasswordShow}
+                                        style={{
+                                            cursor: 'pointer',
+                                            top: '10px',
+                                            right: '10px',
+                                            position: 'absolute',
+                                            width: '25px',
+                                            height: '25px'
+                                        }} />
+                                </div>
                                 {
                                     Object.keys(errors).length === 0 ?
                                         <></>
@@ -204,6 +248,7 @@ const Register = () => {
                     )}
                 </Formik>
             </FormContainer>
+            <ToastContainer />
         </>
     )
 }

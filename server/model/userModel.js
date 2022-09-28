@@ -2,8 +2,8 @@ const mongoose = require('mongoose')
 
 const userScheema = new mongoose.Schema({
     username: {
-        required: true,
         type: String,
+        required: true,
         min: 4,
         max: 20,
         unique: true
@@ -17,6 +17,10 @@ const userScheema = new mongoose.Schema({
         type: String,
         required: true,
         min: 8
+    },
+    isAvatarImageSet: {
+        type: Boolean,
+        default: false
     },
     avatarImage: {
         type: String,
